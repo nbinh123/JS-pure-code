@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: yellow;
+            z-index: 1;
+        }
+
+        .options {
+            position: fixed;
+            z-index: 99;
+            right: 10px;
+            top: 10px;
+            border: 1px dashed black;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .title {
+            cursor: pointer;
+            padding: 5px 15px;
+        }
+
+        .key {
+            display: none;
+        }
+
+        p {
+            color: green;
+        }
+
+        .option {
+            cursor: pointer;
+            border: 1px solid green;
+            padding: 5px 20px;
+            text-align: center;
+        }
+    </style>
+    <div class="container">
+        <canvas id="bars"></canvas>
+        <canvas id="lines"></canvas>
+        <canvas id="circle"></canvas>
+        <div class="options">
+            <div class="title">
+                <p>OPTIONS</p>
+            </div>
+            <div class="key">
+                <p chart="line" class="option">Đường</p>
+                <p chart="bars" class="option">Cột</p>
+                <p chart="circle" class="option">Tròn</p>
+            </div>
+        </div>
+    </div>
+    <!-- hàm reponsive cho dữ liệu in ra -->
+    <script>
+        const renderTextReponsive = (ctx, text, x, y, font) => {
+            const string = text.toString()
+            switch (string.length) {
+                case 1:
+                    x -= 3;
+                    break;
+                case 2:
+                    x -= 7;
+                    break;
+                case 3:
+                    x -= 10.5;
+                    break;
+                case 4:
+                    x -= 13.25
+                    break;
+                case 5:
+                    x -= 17
+                    font = 12
+                    break;
+            }
+            ctx.font = `${font}px Arial`
+            ctx.fillText(text.toString(), x, y)
+        }
+    </script>
+    <!-- Biểu đồ cột -->
+    <script>
+
+        let typeChart = "bars"
+
+        function randomData(min, max) {
+            const arr = []
+            for (let i = 0; i <= 10; i++) {
+                arr.push({
+                    date: new Date(),
+                    index: i,
+                    value: Math.round(Math.random() * (max - min)) + min
+                })
+            }
+            return arr
+        }
+        const data = randomData(20, 100)
+        const bars = document.querySelector("#bars")
+        const ctx = bars.getContext('2d')
+        const ch = bars.height = window.innerHeight
+        const cw = bars.width = window.innerWidth
+        const margin = 100
+        const line = 0.25
+
+        // hàm này vẽ đồ thị bars
+        // biểu đồ sẽ có margin là 50, chúng ta sẽ sẽ tự code phần margin chứ không dùng CSS
+        function BarChart() {
+
+
+            let bars = []
+            let max = 0
+            data.forEach(element => {
+                if (element.value >= max) {
+                    max = element.value
+                }
+            });
+            function dateLines() {
+                const each = (cw - margin * 2) / data.length
+                // console.log(each)
+                for (let i = 0; i < data.length; i++) {
+                    ctx.beginPath()
+                    ctx.moveTo(margin + (each * i), margin - (i === 0 ? (ch - margin * 3) / 14 : 0))
+                    // ctx.font = "13px Arial"
+                    // ctx.fillText(i, margin + (each * i) - 3, ch - margin / 1.2)
+                    renderTextReponsive(ctx, i, margin + (each * i), ch - margin / 1.2, 13)
+                    ctx.lineTo(margin + (each * i), ch - margin)
+                    ctx.lineWidth = line
+                    ctx.stroke()
+                }
+            }
+            function columnLines() {
+                // phải lấy ra giá trị max để bắt đầu chia
+                const each = (ch - margin * 2) / 7
+
+                for (let i = 0; i <= 7; i++) {
+                    ctx.beginPath()
+                    ctx.moveTo(margin, ch - margin - each * i)
+                    // ctx.font = "13px Arial"
+                    // ctx.fillText((max / 7 * i).toFixed(0), margin / 1.3, ch - margin - each * i)
+                    renderTextReponsive(ctx, (max / 7 * i).toFixed(0), margin / 1.3, ch - margin - each * i, 13)
+                    ctx.lineTo(cw - margin + (i === 0 ? (cw - margin * 2) / data.length / 3 : 0), ch - margin - each * i)
+                    ctx.lineWidth = line
+                    ctx.stroke()
+                }
+
+            }
+
+
+            function drawBars() {
+                const each = (cw - margin * 2) / data.length
+                let hue = 23
+                bars.forEach((element, index) => {
+                    if (index !== 0) {
+                        ctx.beginPath()
+                        // ctx.moveTo(margin + (each * index), ch - margin)
+                        ctx.moveTo(margin + (each * index) - 3 - (each / 3.7), ch - margin)
+                        // đường bên trái
+                        ctx.lineTo(margin + (each * index) - 3 - (each / 3.7), ch - margin - ((ch - margin * 2) * element.percent()))
+                        // đường ngang
+                        ctx.lineTo(margin + (each * index) + 3 + (each / 3.7), ch - margin - ((ch - margin * 2) * element.percent()))
+                        // đường bên phải
+                        ctx.lineTo(margin + (each * index) + 3 + (each / 3.7), ch - margin)
+                        // số liêu cụ thể
+                        ctx.fillStyle = "lightgreen"
+                        ctx.fill()
+                        ctx.fillStyle = "darkgreen"
+                        // ctx.fillText(data[index].value, margin + (each * index) - 7, ch - margin - ((ch - margin * 2) * element.percent()) - 5)
+                        renderTextReponsive(ctx, data[index].value, margin + (each * index), ch - margin - ((ch - margin * 2) * element.percent()) - 5, 12)
+
+                        // ctx.fillStyle = 'hsla(' + hue * index + ', 100%, 50%, 1)';
+                        // ctx.strokeStyle = 'hsla(' + hue * index + ', 100%, 50%, 1)';
+                        ctx.lineWidth = 1
+                        ctx.strokeStyle = "green"
+                        ctx.stroke()
+                    }
+                })
+            }
+            function Bars(value) {
+                this.value = value
+                // độ cao thanh bar
+                this.percent = () => {
+                    return this.value / max
+                }
+            }
+            // tạo ra các thanh bar được tính toán sẵn để chuẩn bị vẽ
+            data.forEach(element => {
+                bars.push(new Bars(element.value))
+            })
+            // vẽ các thanh bar với tỉ lệ có sẵn
+            dateLines()
+            columnLines()
+            drawBars()
+        }
+
+    </script>
+    <!-- Biểu đồ đường -->
+    <script>
+        const lines = document.querySelector("#lines")
+        const c = lines.getContext('2d')
+        lines.height = window.innerHeight
+        lines.width = window.innerWidth
+
+        let mouse = {
+            x: null,
+            y: null
+        }
+        lines.addEventListener("mousemove", (e) => {
+            mouse.x = e.clientX
+            mouse.y = e.clientY
+        })
+
+        function LineChart() {
+            let max = 0
+            let min = 9999
+            data.forEach(element => {
+                if (element.value >= max) {
+                    max = element.value
+                }
+                if (element.value < min) {
+                    min = element.value
+                }
+            });
+            max = max * 1.5
+            const average = ((max * 100 / 150 + min) / 2).toFixed(0)
+            // max*100/150
+            //x : 150
+            //..: 100
+
+
+            function dateLines() {
+                const each = (cw - margin * 2) / data.length
+                // console.log(each)
+                for (let i = 0; i < data.length; i++) {
+                    c.beginPath()
+                    c.moveTo(margin + (each * i), margin - (i === 0 ? (ch - margin * 3) / 14 : 0))
+                    c.font = "13px Arial"
+                    c.fillText(i, margin + (each * i) - 3, ch - margin / 1.2)
+                    c.lineTo(margin + (each * i), ch - margin)
+                    c.lineWidth = line
+                    c.stroke()
+                }
+            }
+            function columnLines() {
+                // phải lấy ra giá trị max để bắt đầu chia
+                const each = (ch - margin * 2) / 7
+
+                for (let i = 0; i <= 7; i++) {
+                    c.beginPath()
+                    c.moveTo(margin, ch - margin - each * i)
+                    // c.font = "13px Arial"
+                    // c.fillText((max / 7 * i).toFixed(0), margin / 1.3, ch - margin - each * i)
+                    renderTextReponsive(c, ((max / 7 * i).toFixed(0)), margin / 1.3, ch - margin - each * i, 13)
+                    c.lineTo(cw - margin + (i === 0 ? (cw - margin * 2) / data.length / 3 : 0), ch - margin - each * i)
+                    c.lineWidth = line
+                    c.stroke()
+                }
+
+            }
+
+            function drawLines() {
+                const each = (cw - margin * 2) / data.length
+                const dotsArray = []
+                function Dots(x, y, radius, color, value) {
+                    this.x = x
+                    this.y = y
+                    this.radius = radius
+                    this.value = value
+                    this.move = 1
+                    this.draw = () => {
+                        c.beginPath()
+                        c.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true)
+                        c.fillStyle = color
+                        c.fill()
+                        c.stroke()
+                    }
+                }
+                data.forEach((element, index) => {
+                    // tính toán....
+                    const percents = data[index + 1]?.value / max
+
+                    // vẽ các đường
+                    c.beginPath()
+                    c.moveTo(margin + each * index, ch - margin - ((ch - margin * 2) * data[index].value / max))
+                    if (percents) {
+                        c.lineTo(margin + each * (index + 1), ch - margin - ((ch - margin * 2) * percents))
+                    }
+                    c.lineWidth = 1
+                    c.stroke()
+                    // vẽ chấm tròn ( min và max )
+                    // vẽ đường min
+                    if (element.value === min) {
+                        c.fillText(`min: ${min}`, cw - margin, ch - margin - (ch - margin * 2) * (min / max * 100 / 150))
+                    }
+                    // vẽ đường max
+                    if (element.value === max * 100 / 150) {
+                        c.fillText(`max: ${max * 100 / 150}`, cw - margin, ch - margin - (ch - 2 * margin) * 100 / 150)
+                    }
+                    // vẽ đường trung bình
+                    dotsArray.push(new Dots(
+                        margin + each * index,
+                        ch - margin - ((ch - margin * 2) * data[index].value / max),
+                        (element.value === min || element.value === max * 100 / 150 ? 5 : 2),
+                        (element.value === min ? "lightgreen" : (
+                            element.value === max * 100 / 150 ? "lightgreen" : "black"
+                        )),
+                        element.value
+                    ))
+
+                    // tạo đối tượng chấm tròn để xử lý hiệu ứng
+                });
+
+                dotsArray.forEach(e => {
+                    e.draw()
+                })
+
+
+            }
+            dateLines()
+            columnLines()
+            drawLines()
+            // console.log(((max * 100 / 150) / (ch - 2 * margin)))
+
+
+            c.beginPath()
+            c.setLineDash([2, 2])
+            // vẽ đường min
+            c.moveTo(margin, ch - margin - (ch - margin * 2) * (min / max))
+            c.lineTo(cw - margin, ch - margin - (ch - margin * 2) * (min / max))
+            // vẽ đường max
+            c.moveTo(margin, ch - margin - (ch - 2 * margin) * 100 / 150)
+            c.lineTo(cw - margin, ch - margin - (ch - 2 * margin) * 100 / 150)
+            // vẽ đường trung bình
+            // c.moveTo(margin, ch - margin - (average / (max)) * (ch - 2 * margin))
+            // c.lineTo(cw - margin, ch - margin - (average / (max)) * (ch - 2 * margin))
+            // c.fillText(`average: ${average}`, cw - margin, ch - margin - (average / (max)) * (ch - 2 * margin))
+
+            c.strokeStyle = "blue"
+            c.stroke()
+        }
+    </script>
+    <!-- Biểu đồ tròn -->
+    <script>
+        const circle = document.querySelector("#circle")
+        const ct = circle.getContext('2d')
+        circle.width = cw
+        circle.height = ch
+
+        function CircleChart() {
+            function Part(start, end, part) {
+                this.start = start
+                this.end = end
+                this.part = `${(part * 100).toFixed(0)}%`
+            }
+            let total = 0
+            let parts = []
+            let hue = 50
+
+            let start = 0
+            let end = 2
+            const eachColor = 49
+            let marginNote = 35
+            // 123: 100%
+            // 50: ...%
+            data.forEach((element, index) => {
+                total += element.value
+            });
+            data.forEach((element, index) => {
+                const part = element.value / total
+                // if (index === 0) {
+                if (index !== data.length - 1) {
+                    end = end - (2 * part)
+                } else {
+                    end = 0
+                }
+                // }
+                parts.push(new Part(start, end, part))
+                start = end
+
+            })
+
+            parts.forEach((e, index) => {
+                hue += eachColor
+                ct.beginPath()
+                ct.arc(cw / 2, ch / 2, 200, Math.PI * e.start, Math.PI * e.end, true)
+                ct.lineTo(cw / 2, ch / 2)
+                // ct.strokeStyle = "hsl(" + hue + ", 100%, 50%)";
+                ct.strokeStyle = "white"
+                ct.lineWidth = 2
+                ct.fillStyle = "hsl(" + hue + ", 100%, 50%)";
+                ct.fill()
+                ct.stroke()
+
+                const now = (data[index].date.getHours() + ":" + data[index].date.getMinutes() + ":" + data[index].date.getSeconds()).toString()
+                ct.beginPath()
+                ct.fillRect(margin + 35, margin + marginNote * index - 16, 20, 20)
+                ct.font = "15px Arial"
+                ct.fillText(e.part, margin, margin + marginNote * index)
+                ct.fillText(now, margin + 60, margin + marginNote * index)
+                
+                ct.stroke()
+            });
+            // render bảng ghi chú
+
+
+
+        }
+
+
+    </script>
+    <!-- render biểu đồ theo options -->
+    <script>
+        const button = document.querySelector(".options")
+        const options = document.querySelectorAll(".option")
+        button.addEventListener("click", () => {
+            document.querySelector(".key").style.display = (document.querySelector(".key").style.display === "block" ? "none" : "block")
+        })
+        options.forEach(element => {
+            element.addEventListener("click", () => {
+                typeChart = element.getAttribute("chart")
+                render()
+            })
+        })
+        function render() {
+            if (typeChart === "bars") {
+                document.querySelector("#bars").style.display = "block"
+                document.querySelector("#lines").style.display = "none"
+                document.querySelector("#circle").style.display = "none"
+            }
+            if (typeChart === "line") {
+                document.querySelector("#lines").style.display = "block"
+                document.querySelector("#bars").style.display = "none"
+                document.querySelector("#circle").style.display = "none"
+            }
+            if (typeChart === "circle") {
+                document.querySelector("#circle").style.display = "block"
+                document.querySelector("#lines").style.display = "none"
+                document.querySelector("#bars").style.display = "none"
+            }
+        }
+    </script>
+    <!-- Chạy trước các biểu đồ -->
+    <script>
+        CircleChart()
+        LineChart()
+        BarChart()
+    </script>
+</body>
+
+</html>
